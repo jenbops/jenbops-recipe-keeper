@@ -1,0 +1,31 @@
+services:
+  db:
+    # image: the pre-built PostgreSQL 17 on Alpine, a very small Linux
+    image: postgres:17-alpine
+    # env_file: loads your .env
+    env_file: .env
+    ports:
+      # publishes the port only to your own Mac, so nothing else on your network can reach it
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # stores the data in a named volume (pgdata), so recipes survive restarts
+      - pgdata:/var/lib/postgresql/data
+    # healthcheck: asks the database every 5 seconds whether it's ready
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recipes -d recipes"]
+      interval: 5s
+      retries: 5
+  web:
+    # build: build the image from the Dockerfile in this folder
+    build: .
+    env_file: .env
+    environment:
+      # "db" is the database container's name; Compose lets containers find each other by service name
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  pgdata:
