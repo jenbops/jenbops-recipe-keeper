@@ -16,6 +16,21 @@ class RecipeIn(BaseModel):
     tags: list[str] = []
 
 
+def set_tags(conn, recipe_id: int, tags: list[str]):
+    # clean tags: trim spaces, lowercase, remove duplicates and blanks
+    for name in {t.strip().lower() for t in tags if t.strip()}:
+        tag_id = conn.execute(
+            "INSERT INTO tags (name) VALUES (%s) "
+            "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id",
+            (name,),
+        ).fetchone()["id"]
+        conn.execute(
+            "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (%s, %s) "
+            "ON CONFLICT DO NOTHING",
+            (recipe_id, tag_id),
+        )
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -36,18 +51,7 @@ def create_recipe(r: RecipeIn):
             "VALUES (%s, %s, %s, %s, %s) RETURNING id",
             (r.title, r.ingredients, r.steps, r.source_url, r.notes),
         ).fetchone()["id"]
-        # clean tags: trim spaces, lowercase, remove duplicates and blanks
-        for name in {t.strip().lower() for t in r.tags if t.strip()}:
-            tag_id = conn.execute(
-                "INSERT INTO tags (name) VALUES (%s) "
-                "ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id",
-                (name,),
-            ).fetchone()["id"]
-            conn.execute(
-                "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (%s, %s) "
-                "ON CONFLICT DO NOTHING",
-                (rid, tag_id),
-            )
+        set_tags(conn, rid, r.tags)
     return {"id": rid}
 
 
@@ -96,6 +100,22 @@ def get_recipe(recipe_id: int):
     return row
 
 
+@app.put("/recipes/{recipe_id}")
+def update_recipe(recipe_id: int, r: RecipeIn):
+    with get_conn() as conn:
+        row = conn.execute(
+            "UPDATE recipes SET title=%s, ingredients=%s, steps=%s, source_url=%s, "
+            "notes=%s, updated_at=now() WHERE id=%s RETURNING id",
+            (r.title, r.ingredients, r.steps, r.source_url, r.notes, recipe_id),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        # replace the tag set: remove old links, then add the new ones
+        conn.execute("DELETE FROM recipe_tags WHERE recipe_id = %s", (recipe_id,))
+        set_tags(conn, recipe_id, r.tags)
+    return {"id": recipe_id}
+
+
 @app.delete("/recipes/{recipe_id}", status_code=204)
 def delete_recipe(recipe_id: int):
     with get_conn() as conn:
@@ -104,3 +124,13 @@ def delete_recipe(recipe_id: int):
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
+
+
+@app.get("/tags")
+def list_tags():
+    with get_conn() as conn:
+        return conn.execute(
+            "SELECT t.name, count(rt.recipe_id) AS recipes "
+            "FROM tags t LEFT JOIN recipe_tags rt ON rt.tag_id = t.id "
+            "GROUP BY t.id ORDER BY t.name"
+        ).fetchall()
