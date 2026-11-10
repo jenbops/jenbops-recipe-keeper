@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a class="btn primary" href="/r/new">+ New recipe</a></p>
+<form hx-get="/partials/list" hx-trigger="input changed delay:300ms, change" hx-target="#results">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search recipes…" autocomplete="off">
+  <div class="chips">
+    {% for t in all_tags %}
+    <label class="chip">
+      <input type="checkbox" name="tag" value="{{ t.name }}" {% if t.name in selected %}checked{% endif %}>
+      <span>{{ t.name }} ({{ t.recipes }})</span>
+    </label>
+    {% endfor %}
+  </div>
+</form>
+<div id="results">{% include "_list.html" %}</div>
+{% endblock %}

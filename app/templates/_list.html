@@ -1,0 +1,14 @@
+{% if recipes %}
+<ul class="list">
+  {% for r in recipes %}
+  <li>
+    <a href="/r/{{ r.id }}">
+      <strong>{{ r.title }}</strong><br>
+      <span class="tags">{% for t in r.tags %}<em>{{ t }}</em>{% endfor %}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="empty">No recipes match.</p>
+{% endif %}

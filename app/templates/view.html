@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/">← All recipes</a></p>
+<h2>{{ r.title }}</h2>
+<p class="tags">{% for t in r.tags %}<em>{{ t }}</em>{% endfor %}</p>
+{% if r.source_url and r.source_url.startswith(('http://', 'https://')) %}
+<p><a href="{{ r.source_url }}" rel="noopener noreferrer">Original source</a></p>
+{% endif %}
+<h3>Ingredients</h3>
+<div class="text">{{ r.ingredients }}</div>
+<h3>Steps</h3>
+<div class="text">{{ r.steps }}</div>
+{% if r.notes %}<h3>Notes</h3><div class="text">{{ r.notes }}</div>{% endif %}
+
+<div class="actions">
+  <a class="btn" href="/r/{{ r.id }}/edit">Edit</a>
+  <form method="post" action="/r/{{ r.id }}/delete" onsubmit="return confirm('Delete this recipe?')">
+    <button type="submit" class="btn danger">Delete</button>
+  </form>
+</div>
+{% endblock %}

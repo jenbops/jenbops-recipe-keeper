@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="{% if r %}/r/{{ r.id }}{% else %}/{% endif %}">← Cancel</a></p>
+<h2>{% if r %}Edit recipe{% else %}New recipe{% endif %}</h2>
+
+<form method="post" action="{% if r %}/r/{{ r.id }}/edit{% else %}/r/new{% endif %}">
+  <label>Title
+    <input type="text" name="title" value="{{ r.title if r else '' }}" required>
+  </label>
+  <label>Ingredients (one per line)
+    <textarea name="ingredients" rows="6">{{ r.ingredients if r else '' }}</textarea>
+  </label>
+  <label>Steps (one per line)
+    <textarea name="steps" rows="6">{{ r.steps if r else '' }}</textarea>
+  </label>
+  <label>Tags (separate with commas)
+    <input type="text" name="tags" value="{{ r.tags | join(', ') if r else '' }}" placeholder="sandwich, lunch">
+  </label>
+  {% if all_tags %}
+  <p class="hint">Existing tags: {% for t in all_tags %}{{ t.name }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+  <label>Source link (optional)
+    <input type="text" name="source_url" value="{{ r.source_url or '' if r else '' }}" placeholder="https://…">
+  </label>
+  <label>Notes (optional)
+    <textarea name="notes" rows="3">{{ r.notes or '' if r else '' }}</textarea>
+  </label>
+  <button type="submit" class="btn primary">Save</button>
+</form>
+{% endblock %}
