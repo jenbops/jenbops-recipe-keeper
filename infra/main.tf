@@ -55,7 +55,7 @@ resource "google_storage_bucket" "backups" {
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
-  force_destroy               = true # lets "terraform destroy" delete a non-empty bucket
+  force_destroy               = false # lets "terraform destroy" delete a non-empty bucket
 
   lifecycle_rule {
     condition {
