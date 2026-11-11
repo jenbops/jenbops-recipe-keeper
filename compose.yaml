@@ -1,31 +1,52 @@
 services:
+  # db: the PostgreSQL database container
   db:
-    # image: the pre-built PostgreSQL 17 on Alpine, a very small Linux
+    # the pre-built PostgreSQL 17 on Alpine, a very small Linux
     image: postgres:17-alpine
-    # env_file: loads your .env
+    # loads your database user, password, and name from .env
     env_file: .env
+    # restart automatically after a crash or VM reboot
+    restart: unless-stopped
     ports:
-      # publishes the port only to your own Mac, so nothing else on your network can reach it
+      # publishes the port only to the host machine, so nothing else can reach it
       - "127.0.0.1:5432:5432"
     volumes:
       # stores the data in a named volume (pgdata), so recipes survive restarts
       - pgdata:/var/lib/postgresql/data
-    # healthcheck: asks the database every 5 seconds whether it's ready
+    # asks the database every 5 seconds whether it's ready
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U recipes -d recipes"]
       interval: 5s
       retries: 5
+
+  # web: the FastAPI app
   web:
-    # build: build the image from the Dockerfile in this folder
+    # builds the image from the Dockerfile in this folder
     build: .
     env_file: .env
+    restart: unless-stopped
     environment:
       # "db" is the database container's name; Compose lets containers find each other by service name
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     ports:
       - "127.0.0.1:8000:8000"
+    # waits until the database passes its healthcheck before starting
     depends_on:
       db:
         condition: service_healthy
+
+  # cloudflared: connects out to Cloudflare so visitors can reach the app with no open ports
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    restart: unless-stopped
+    # "profiles" keeps this off on your Mac: it only starts when the prod profile is on
+    profiles: ["prod"]
+    depends_on:
+      - web
+
+# named volumes managed by Docker
 volumes:
   pgdata:
