@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException, Query
+from urllib.parse import urlparse
+
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from . import repo
@@ -6,6 +9,26 @@ from .db import get_conn
 from .ui import router as ui_router
 
 app = FastAPI(title="Recipe Keeper")
+
+
+@app.middleware("http")
+async def security(request: Request, call_next):
+    # Cross-site request forgery (CSRF) defense: browsers attach an Origin header to
+    # form posts. If it names a different site than this one, refuse the request.
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        origin = request.headers.get("origin")
+        if origin and urlparse(origin).netloc != request.headers.get("host"):
+            return JSONResponse(
+                {"detail": "Cross-site request blocked"}, status_code=403
+            )
+    response = await call_next(request)
+    # Security headers: stop content-type guessing, block framing, limit referrer info
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
+
+
 app.include_router(ui_router)  # adds the web pages from ui.py
 
 
