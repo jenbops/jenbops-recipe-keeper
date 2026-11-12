@@ -1,0 +1,39 @@
+# Cloud Build pipeline for Recipe Keeper: build, smoke-test, and publish the web image
+substitutions:
+  # user-defined values (they must start with an underscore); a trigger can override them
+  _REGION: us-central1
+  _REPO: recipe-keeper
+
+steps:
+  # Step 1: build the image from the Dockerfile; tag it with this build's unique id and "latest"
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
+      - .
+
+  # Step 2: smoke test; run the new image once and make sure the app code imports cleanly
+  - id: smoke-test
+    name: gcr.io/cloud-builders/docker
+    args:
+      - run
+      - --rm
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$BUILD_ID
+      - python
+      - -c
+      - 'import app.main; print("import ok")'
+
+# Cloud Build pushes these images only if every step above succeeded
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/web:latest
+
+options:
+  # send build logs to Cloud Logging (required when builds run as a custom service account)
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 600s
