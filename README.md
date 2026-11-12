@@ -1,5 +1,5 @@
 # Recipe Keeper
-
+by Jennifer Brooks
 A private, mobile-friendly web app for saving recipes, tagging them, and finding any of them fast. Built as a hands-on training project: design it like a product manager (requirements first), build it, containerize it, deploy it with Infrastructure as Code (IaC), and protect it.
 
 - **Live:** `recipes.jenb-ops.dev` (private, behind a login)
