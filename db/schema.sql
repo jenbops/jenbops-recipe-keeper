@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS recipes (
     notes       TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    servings      INTEGER CHECK (servings > 0),
+    prep_minutes  INTEGER CHECK (prep_minutes >= 0),
+    cook_minutes  INTEGER CHECK (cook_minutes >= 0),
     -- search_vector: PostgreSQL builds a searchable index of words from these columns automatically
     search_vector tsvector GENERATED ALWAYS AS (
         to_tsvector('english', title || ' ' || ingredients || ' ' || steps)

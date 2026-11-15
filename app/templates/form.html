@@ -7,6 +7,20 @@
   <label>Title
     <input type="text" name="title" value="{{ r.title if r else '' }}" required>
   </label>
+  <div style="display:flex; gap:0.75rem;">
+    <label style="flex:1;">Servings
+      <input type="number" name="servings" min="1" max="1000" inputmode="numeric"
+             value="{{ r.servings if r and r.servings is not none else '' }}">
+    </label>
+    <label style="flex:1;">Prep (min)
+      <input type="number" name="prep_minutes" min="0" max="10000" inputmode="numeric"
+             value="{{ r.prep_minutes if r and r.prep_minutes is not none else '' }}">
+    </label>
+    <label style="flex:1;">Cook (min)
+      <input type="number" name="cook_minutes" min="0" max="10000" inputmode="numeric"
+             value="{{ r.cook_minutes if r and r.cook_minutes is not none else '' }}">
+    </label>
+  </div>
   <label>Ingredients (one per line)
     <textarea name="ingredients" rows="6">{{ r.ingredients if r else '' }}</textarea>
   </label>

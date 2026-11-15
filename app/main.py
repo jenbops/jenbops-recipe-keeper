@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import repo
 from .db import get_conn
@@ -39,6 +39,9 @@ class RecipeIn(BaseModel):
     source_url: str | None = None
     notes: str | None = None
     tags: list[str] = []
+    servings: int | None = Field(default=None, gt=0, le=1000)
+    prep_minutes: int | None = Field(default=None, ge=0, le=10000)
+    cook_minutes: int | None = Field(default=None, ge=0, le=10000)
 
 
 @app.get("/health")

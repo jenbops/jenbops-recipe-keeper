@@ -10,7 +10,24 @@ router = APIRouter()
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 
-def _data(title, ingredients, steps, source_url, notes, tags) -> dict:
+def _whole_number(text: str, label: str, minimum: int, maximum: int):
+    # form boxes arrive as text: "" -> no value, "15" -> 15, anything else -> error
+    text = text.strip()
+    if not text:
+        return None
+    try:
+        value = int(text)
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"{label} must be a whole number")
+    if not minimum <= value <= maximum:
+        raise HTTPException(
+            status_code=422, detail=f"{label} must be between {minimum} and {maximum}"
+        )
+    return value
+
+
+def _data(title, ingredients, steps, source_url, notes, tags,
+          servings, prep_minutes, cook_minutes) -> dict:
     # turns raw form text into the dict that repo.py expects
     if not title.strip():
         raise HTTPException(status_code=422, detail="Title is required")
@@ -21,6 +38,9 @@ def _data(title, ingredients, steps, source_url, notes, tags) -> dict:
         "source_url": source_url.strip() or None,  # empty box -> no value
         "notes": notes.strip() or None,
         "tags": tags.split(","),  # "a, b" -> ["a", " b"]; repo.py trims and lowercases
+        "servings": _whole_number(servings, "Servings", 1, 1000),
+        "prep_minutes": _whole_number(prep_minutes, "Prep time", 0, 10000),
+        "cook_minutes": _whole_number(cook_minutes, "Cook time", 0, 10000),
     }
 
 
@@ -61,8 +81,13 @@ def create(
     source_url: str = Form(""),
     notes: str = Form(""),
     tags: str = Form(""),
+    servings: str = Form(""),
+    prep_minutes: str = Form(""),
+    cook_minutes: str = Form(""),
 ):
-    rid = repo.create_recipe(_data(title, ingredients, steps, source_url, notes, tags))
+    data = _data(title, ingredients, steps, source_url, notes, tags,
+                 servings, prep_minutes, cook_minutes)
+    rid = repo.create_recipe(data)
     return RedirectResponse(f"/r/{rid}", status_code=303)
 
 
@@ -93,8 +118,12 @@ def update(
     source_url: str = Form(""),
     notes: str = Form(""),
     tags: str = Form(""),
+    servings: str = Form(""),
+    prep_minutes: str = Form(""),
+    cook_minutes: str = Form(""),
 ):
-    data = _data(title, ingredients, steps, source_url, notes, tags)
+    data = _data(title, ingredients, steps, source_url, notes, tags,
+                 servings, prep_minutes, cook_minutes)
     if not repo.update_recipe(recipe_id, data):
         raise HTTPException(status_code=404, detail="Recipe not found")
     return RedirectResponse(f"/r/{recipe_id}", status_code=303)
