@@ -46,6 +46,20 @@ services:
     profiles: ["prod"]
     depends_on:
       - web
+  # test: runs the automated tests against a throwaway database (never the real one)
+  test:
+    build:
+      context: .
+      target: test
+    env_file: .env
+    environment:
+      # points at the maintenance database "postgres"; tests create their own recipes_test database
+      TEST_DATABASE_ADMIN_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    # the profile keeps it from starting with "docker compose up"
+    profiles: ["test"]    
 
 # named volumes managed by Docker
 volumes:
