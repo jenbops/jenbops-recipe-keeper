@@ -25,9 +25,14 @@ def set_tags(conn, recipe_id: int, tags: list[str]):
 def create_recipe(d: dict) -> int:
     with get_conn() as conn:  # commits when the block ends successfully
         rid = conn.execute(
-            "INSERT INTO recipes (title, ingredients, steps, source_url, notes) "
-            "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-            (d["title"], d["ingredients"], d["steps"], d["source_url"], d["notes"]),
+            # NEW: three more columns and three more %s placeholders
+            "INSERT INTO recipes (title, ingredients, steps, source_url, notes, "
+            "servings, prep_minutes, cook_minutes) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (
+                d["title"], d["ingredients"], d["steps"], d["source_url"], d["notes"],
+                d.get("servings"), d.get("prep_minutes"), d.get("cook_minutes"),  # NEW
+            ),
         ).fetchone()["id"]
         set_tags(conn, rid, d["tags"])
     return rid
@@ -37,8 +42,13 @@ def update_recipe(rid: int, d: dict) -> bool:
     with get_conn() as conn:
         row = conn.execute(
             "UPDATE recipes SET title=%s, ingredients=%s, steps=%s, source_url=%s, "
-            "notes=%s, updated_at=now() WHERE id=%s RETURNING id",
-            (d["title"], d["ingredients"], d["steps"], d["source_url"], d["notes"], rid),
+            "notes=%s, servings=%s, prep_minutes=%s, cook_minutes=%s, "  # NEW
+            "updated_at=now() WHERE id=%s RETURNING id",
+            (
+                d["title"], d["ingredients"], d["steps"], d["source_url"], d["notes"],
+                d.get("servings"), d.get("prep_minutes"), d.get("cook_minutes"),  # NEW
+                rid,
+            ),
         ).fetchone()
         if row is None:
             return False
@@ -86,6 +96,7 @@ def get_recipe(rid: int):
     with get_conn() as conn:
         return conn.execute(
             "SELECT r.id, r.title, r.ingredients, r.steps, r.source_url, r.notes, "
+            "r.servings, r.prep_minutes, r.cook_minutes, "  # NEW
             f"{TAGS_AGG} AS tags "
             "FROM recipes r "
             "LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id "

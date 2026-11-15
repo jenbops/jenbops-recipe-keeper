@@ -2,6 +2,11 @@
 {% block content %}
 <p><a href="/">← All recipes</a></p>
 <h2>{{ r.title }}</h2>
+{% set bits = [] %}
+{% if r.servings is not none %}{% set _ = bits.append("Serves " ~ r.servings) %}{% endif %}
+{% if r.prep_minutes is not none %}{% set _ = bits.append("Prep: " ~ r.prep_minutes ~ " min") %}{% endif %}
+{% if r.cook_minutes is not none %}{% set _ = bits.append("Cook: " ~ r.cook_minutes ~ " min") %}{% endif %}
+{% if bits %}<p class="times">{{ bits | join(" · ") }}</p>{% endif %}
 <p class="tags">{% for t in r.tags %}<em>{{ t }}</em>{% endfor %}</p>
 {% if r.source_url and r.source_url.startswith(('http://', 'https://')) %}
 <p><a href="{{ r.source_url }}" rel="noopener noreferrer">Original source</a></p>
