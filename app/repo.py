@@ -1,4 +1,5 @@
 from .db import get_conn
+from .ingredients import parse_ingredients
 
 # SQL snippet: collects a recipe's tag names into a list ('{}' = empty list)
 TAGS_AGG = (
@@ -20,7 +21,16 @@ def set_tags(conn, recipe_id: int, tags: list[str]):
             "ON CONFLICT DO NOTHING",
             (recipe_id, tag_id),
         )
-
+def set_ingredients(conn, recipe_id: int, text: str):
+    # replace this recipe's rows with fresh ones read from the typed text
+    conn.execute("DELETE FROM ingredients WHERE recipe_id = %s", (recipe_id,))
+    for row in parse_ingredients(text or ""):
+        conn.execute(
+            "INSERT INTO ingredients (recipe_id, position, quantity, unit, name, note, original_text) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (recipe_id, row["position"], row["quantity"], row["unit"],
+             row["name"], row["note"], row["original_text"]),
+        )
 
 def create_recipe(d: dict) -> int:
     with get_conn() as conn:  # commits when the block ends successfully
@@ -35,6 +45,7 @@ def create_recipe(d: dict) -> int:
             ),
         ).fetchone()["id"]
         set_tags(conn, rid, d["tags"])
+        set_ingredients(conn, rid, d["ingredients"])
     return rid
 
 
@@ -55,6 +66,7 @@ def update_recipe(rid: int, d: dict) -> bool:
         # replace the tag set: remove old links, then add the new ones
         conn.execute("DELETE FROM recipe_tags WHERE recipe_id = %s", (rid,))
         set_tags(conn, rid, d["tags"])
+        set_ingredients(conn, rid, d["ingredients"])
     return True
 
 
@@ -94,9 +106,9 @@ def list_recipes(q: str | None = None, tags: list[str] | None = None):
 
 def get_recipe(rid: int):
     with get_conn() as conn:
-        return conn.execute(
+        recipe = conn.execute(
             "SELECT r.id, r.title, r.ingredients, r.steps, r.source_url, r.notes, "
-            "r.servings, r.prep_minutes, r.cook_minutes, "  # NEW
+            "r.servings, r.prep_minutes, r.cook_minutes, "
             f"{TAGS_AGG} AS tags "
             "FROM recipes r "
             "LEFT JOIN recipe_tags rt ON rt.recipe_id = r.id "
@@ -104,6 +116,14 @@ def get_recipe(rid: int):
             "WHERE r.id = %s GROUP BY r.id",
             (rid,),
         ).fetchone()
+        if recipe is None:
+            return None
+        recipe["ingredient_rows"] = conn.execute(
+            "SELECT position, quantity, unit, name, note, original_text "
+            "FROM ingredients WHERE recipe_id = %s ORDER BY position",
+            (rid,),
+        ).fetchall()
+    return recipe
 
 
 def list_tags():
