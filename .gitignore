@@ -4,4 +4,4 @@ __pycache__/
 venv/
 infra/.terraform/
 *.tfstate
-*.tfstate.*
+*.tfstate.*.DS_Store
