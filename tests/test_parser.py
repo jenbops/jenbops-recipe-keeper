@@ -49,3 +49,10 @@ def test_parse_ingredients_skips_blank_lines_and_numbers_positions():
     rows = parse_ingredients("2 cups flour\n\n  \n3 eggs\n")
     assert [r["position"] for r in rows] == [1, 2]
     assert [r["name"] for r in rows] == ["flour", "eggs"]
+
+def test_hyphenated_mixed_fraction_is_not_a_range():
+    check("1-1/2 teaspoons canola oil", 1.5, "tsp", "canola oil")
+
+
+def test_en_dash_range_is_still_kept_whole():
+    check("4–6 slices whole-wheat bread", None, None, "4–6 slices whole-wheat bread")    
