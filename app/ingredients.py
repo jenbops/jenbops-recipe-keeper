@@ -17,7 +17,8 @@ UNITS = {
     "liter": "l", "liters": "l", "l": "l",
     "clove": "clove", "cloves": "clove",
     "can": "can", "cans": "can",
-    "pinch": "pinch", "pinches": "pinch",
+    "pinch": "pinch", "pinches": "pinch", 
+    "slice": "slice", "slices": "slice",
 }
 
 # a number at the start: "1 1/2", "3/4", "2.5", or "2"

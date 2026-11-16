@@ -56,3 +56,7 @@ def test_hyphenated_mixed_fraction_is_not_a_range():
 
 def test_en_dash_range_is_still_kept_whole():
     check("4–6 slices whole-wheat bread", None, None, "4–6 slices whole-wheat bread")    
+
+def test_slice_is_a_unit():
+    check("2 slices of bread", 2, "slice", "bread")
+    check("1 slice bread", 1, "slice", "bread")    
