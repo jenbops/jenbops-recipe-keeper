@@ -45,3 +45,10 @@ def scale_rows(rows, servings_from: int, servings_to: int) -> list[dict]:
             text += ", " + row["note"]
         lines.append({"text": text, "scaled": True})
     return lines
+
+def item_text(quantity, unit, name) -> str:
+    """Display text for a shopping item: 3.5, 'cup', 'flour' -> '3 1/2 cups flour'."""
+    if quantity is None:
+        return name
+    unit_text = PLURALS.get(unit, unit) if unit and float(quantity) > 1 else unit
+    return " ".join(part for part in (format_quantity(quantity), unit_text, name) if part)

@@ -26,6 +26,15 @@
 <div class="text">{{ r.steps }}</div>
 {% if r.notes %}<h3>Notes</h3><div class="text">{{ r.notes }}</div>{% endif %}
 
+<form method="post" action="/shopping/add/{{ r.id }}" class="add-to-list">
+  {% if r.servings %}
+  <label>Servings to shop for
+    <input type="number" name="servings" min="1" max="1000" inputmode="numeric" value="{{ r.servings }}">
+  </label>
+  {% endif %}
+  <button type="submit" class="btn primary">Add to shopping list</button>
+</form>
+
 <div class="actions">
   <a class="btn" href="/r/{{ r.id }}/edit">Edit</a>
   <form method="post" action="/r/{{ r.id }}/delete" onsubmit="return confirm('Delete this recipe?')">

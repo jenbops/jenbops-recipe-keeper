@@ -37,7 +37,7 @@ def clean_tables(test_database):
     """Empty the tables before every test so tests can't affect each other."""
     assert os.environ["DATABASE_URL"].endswith("/" + TEST_DB)  # second safety check
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
-        conn.execute("TRUNCATE recipes, tags RESTART IDENTITY CASCADE")
+        conn.execute("TRUNCATE recipes, tags, shopping_items RESTART IDENTITY CASCADE")
 
 
 @pytest.fixture
