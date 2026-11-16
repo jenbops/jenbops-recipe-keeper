@@ -37,6 +37,8 @@ def parse_line(line: str) -> dict:
     for symbol, replacement in UNICODE_FRACTIONS.items():
         text = text.replace(symbol, replacement)
     text = re.sub(r"\s+", " ", text).strip()
+        # "1-1/2" is a mixed fraction written with a hyphen, not a range: make it "1 1/2"
+    text = re.sub(r"^(\d+)[-–](\d+/\d+)", r"\1 \2", text)
 
     if RANGE.match(text):
         return _whole_line(line)
