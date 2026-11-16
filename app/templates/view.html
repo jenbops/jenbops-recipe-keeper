@@ -12,7 +12,16 @@
 <p><a href="{{ r.source_url }}" rel="noopener noreferrer">Original source</a></p>
 {% endif %}
 <h3>Ingredients</h3>
-<div class="text">{{ r.ingredients }}</div>
+{% if r.servings %}
+<form class="scaler" hx-get="/r/{{ r.id }}/ingredients" hx-target="#ingredients"
+      hx-trigger="input delay:300ms" onsubmit="return false">
+  <label>Servings
+    <input type="number" name="servings" min="1" max="1000" inputmode="numeric" value="{{ r.servings }}">
+  </label>
+  <p class="hint">Changing this only changes what you see here. Your saved recipe stays the same.</p>
+</form>
+{% endif %}
+<div id="ingredients">{% include "_ingredients.html" %}</div>
 <h3>Steps</h3>
 <div class="text">{{ r.steps }}</div>
 {% if r.notes %}<h3>Notes</h3><div class="text">{{ r.notes }}</div>{% endif %}

@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from .scaling import scale_rows
 
 from . import repo
 
@@ -42,7 +43,13 @@ def _data(title, ingredients, steps, source_url, notes, tags,
         "prep_minutes": _whole_number(prep_minutes, "Prep time", 0, 10000),
         "cook_minutes": _whole_number(cook_minutes, "Cook time", 0, 10000),
     }
-
+def _lines(recipe, servings=None):
+    # base = what the recipe was written for; target = what the person asked for
+    base = recipe["servings"]
+    target = servings or base
+    if not base or not target:
+        base = target = 1  # no original servings known: show the lines unchanged
+    return scale_rows(recipe["ingredient_rows"], base, target)
 
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request, q: str = "", tag: list[str] = Query(default=[])):
@@ -96,8 +103,22 @@ def view_recipe(request: Request, recipe_id: int):
     recipe = repo.get_recipe(recipe_id)
     if recipe is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
-    return templates.TemplateResponse(request, "view.html", {"r": recipe})
+    return templates.TemplateResponse(
+        request, "view.html", {"r": recipe, "lines": _lines(recipe)}
+    )
 
+
+@router.get("/r/{recipe_id}/ingredients", response_class=HTMLResponse)
+def ingredients_partial(
+    request: Request, recipe_id: int, servings: int = Query(ge=1, le=1000)
+):
+    # returns just the ingredient list (a fragment of HTML), for htmx to swap in
+    recipe = repo.get_recipe(recipe_id)
+    if recipe is None:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return templates.TemplateResponse(
+        request, "_ingredients.html", {"lines": _lines(recipe, servings)}
+    )
 
 @router.get("/r/{recipe_id}/edit", response_class=HTMLResponse)
 def edit_form(request: Request, recipe_id: int):
