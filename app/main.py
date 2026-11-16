@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from . import repo
 from .db import get_conn
 from .ui import router as ui_router
+from .shopping_ui import router as shopping_router
 
 app = FastAPI(title="Recipe Keeper")
 
@@ -30,6 +31,7 @@ async def security(request: Request, call_next):
 
 
 app.include_router(ui_router)  # adds the web pages from ui.py
+app.include_router(shopping_router)  # adds the shopping list pages
 
 
 class RecipeIn(BaseModel):

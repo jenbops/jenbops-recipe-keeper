@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/">← All recipes</a></p>
+<h2>Shopping list</h2>
+<div id="shopping">{% include "_shopping_list.html" %}</div>
+{% if to_buy or have %}
+<form method="post" action="/shopping/clear" onsubmit="return confirm('Clear the whole list?')">
+  <button type="submit" class="btn danger">Clear list</button>
+</form>
+{% endif %}
+{% endblock %}

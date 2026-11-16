@@ -1,0 +1,16 @@
+{% macro row(i) %}
+<li style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem;">
+  <label>
+    <input type="checkbox" {% if i.have %}checked{% endif %}
+           hx-post="/shopping/{{ i.id }}/toggle" hx-target="#shopping" hx-swap="innerHTML">
+    <span{% if i.have %} style="text-decoration: line-through"{% endif %}>{{ i.text }}</span>
+  </label>
+  <button type="button" class="btn" aria-label="Remove {{ i.name }}"
+          hx-post="/shopping/{{ i.id }}/delete" hx-target="#shopping" hx-swap="innerHTML">Remove</button>
+</li>
+{% endmacro %}
+{% if not to_buy and not have %}
+<p class="hint">Your shopping list is empty. Open a recipe and choose "Add to shopping list".</p>
+{% endif %}
+{% if to_buy %}<h3>To buy</h3><ul class="shopping">{% for i in to_buy %}{{ row(i) }}{% endfor %}</ul>{% endif %}
+{% if have %}<h3>Already have</h3><ul class="shopping">{% for i in have %}{{ row(i) }}{% endfor %}</ul>{% endif %}
