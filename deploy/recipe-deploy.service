@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy the approved Recipe Keeper release
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=jenniferbrooks
+WorkingDirectory=/home/jenniferbrooks/jenbops-recipe-keeper
+ExecStart=/home/jenniferbrooks/jenbops-recipe-keeper/scripts/deploy-watch.sh
