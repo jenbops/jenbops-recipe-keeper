@@ -1,0 +1,36 @@
+steps:
+  - id: start-db
+    name: gcr.io/cloud-builders/docker
+    args: [run, -d, --name, testdb, --network, cloudbuild,
+           -e, POSTGRES_PASSWORD=ci-only-password, postgres:17-alpine]
+
+  - id: build-test
+    name: gcr.io/cloud-builders/docker
+    args: [build, --target, test, -t, recipe-test, .]
+
+  - id: run-tests
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        for i in $(seq 1 30); do
+          docker exec testdb pg_isready -U postgres && break
+          sleep 1
+        done
+        docker run --rm --network cloudbuild \
+          -e TEST_DATABASE_ADMIN_URL=postgresql://postgres:ci-only-password@testdb:5432/postgres \
+          recipe-test
+
+  - id: publish-release
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        echo "$TAG_NAME" | grep -Eq '^v[0-9]+(\.[0-9]+)*$'
+        printf '%s' "$TAG_NAME" | gcloud storage cp - "gs://$PROJECT_ID-releases/approved-release"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
