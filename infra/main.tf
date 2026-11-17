@@ -101,3 +101,43 @@ resource "google_compute_instance" "recipes" {
 
   metadata_startup_script = file("${path.module}/startup.sh")
 }
+# --- Releases bucket: holds one tiny file, "approved-release", written by CI after tests pass ---
+resource "google_storage_bucket" "releases" {
+  name                        = "${var.project_id}-releases"
+  location                    = upper(var.region)
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+  force_destroy               = true # nothing precious lives here, so "terraform destroy" may empty it
+
+  versioning {
+    enabled = true # every overwrite keeps the old version: a free history of approved releases
+  }
+}
+
+# --- The identity CI uses to publish the approved release ---
+resource "google_service_account" "deploy" {
+  account_id   = "recipe-deploy"
+  display_name = "Recipe Keeper deploy"
+}
+
+# CI may write the approved-release file, in THIS bucket only
+resource "google_storage_bucket_iam_member" "deploy_writes_releases" {
+  bucket = google_storage_bucket.releases.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+# The VM may only read it
+resource "google_storage_bucket_iam_member" "vm_reads_releases" {
+  bucket = google_storage_bucket.releases.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.vm.email}"
+}
+
+# Builds that run as the deploy robot need permission to write their own logs
+resource "google_project_iam_member" "deploy_logs" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}
