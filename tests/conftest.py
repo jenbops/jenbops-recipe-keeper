@@ -57,5 +57,5 @@ def make_recipe(client, **overrides) -> int:
     }
     body.update(overrides)
     response = client.post("/recipes", json=body)
-    assert response.status_code == 201
+    assert response.status_code == 202
     return response.json()["id"]
