@@ -113,3 +113,10 @@ ul.stats li {
   padding: .6rem .95rem; border-radius: 14px; background: var(--card); font-weight: 600;
   box-shadow: var(--card-shadow); outline: var(--card-stitch); outline-offset: -5px;
 }
+/* theme picker at the bottom of every page */
+.theme-picker { display: flex; align-items: center; gap: .6rem; margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.theme-picker label { margin: 0; font-size: .85rem; }
+.theme-picker select {
+  min-height: 44px; padding: 0 .8rem; font-family: inherit; font-size: 1rem; border-radius: 12px;
+  border: 1px solid var(--search-border); background: var(--search-bg); color: var(--search-text);
+}

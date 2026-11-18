@@ -4,12 +4,15 @@ from fastapi import APIRouter, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from .scaling import scale_rows
+from .themes import THEMES, DEFAULT, theme_context
 
 from . import repo
 
 router = APIRouter()
-templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
-
+templates = Jinja2Templates(
+    directory=Path(__file__).parent / "templates",
+    context_processors=[theme_context],
+)
 
 def _whole_number(text: str, label: str, minimum: int, maximum: int):
     # form boxes arrive as text: "" -> no value, "15" -> 15, anything else -> error
@@ -155,3 +158,13 @@ def delete(recipe_id: int):
     if not repo.delete_recipe(recipe_id):
         raise HTTPException(status_code=404, detail="Recipe not found")
     return RedirectResponse("/", status_code=303)
+
+@router.post("/theme")
+def set_theme(theme: str = Form(...), next: str = Form("/")):
+    if theme not in THEMES:
+        raise HTTPException(status_code=400, detail="Unknown theme")
+    # only go back to a page on this site, never to another website
+    target = next if next.startswith("/") and not next.startswith("//") else "/"
+    response = RedirectResponse(target, status_code=303)
+    response.set_cookie("theme", theme, max_age=60 * 60 * 24 * 365, samesite="lax", httponly=True)
+    return response

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,5 +18,15 @@
     <a href="/shopping" {% if request.url.path == '/shopping' %}aria-current="page"{% endif %}>Shopping list</a>
   </nav>
   {% block content %}{% endblock %}
+    <form method="post" action="/theme" class="theme-picker">
+    <input type="hidden" name="next" value="{{ request.url.path }}">
+    <label for="theme">Theme</label>
+    <select id="theme" name="theme" onchange="this.form.submit()">
+      {% for key, name in themes.items() %}
+      <option value="{{ key }}"{% if key == theme %} selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button type="submit" class="btn">Apply</button></noscript>
+  </form>
 </body>
 </html>

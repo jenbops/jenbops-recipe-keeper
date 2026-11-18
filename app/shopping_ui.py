@@ -1,15 +1,11 @@
 from pathlib import Path
-
+from .ui import templates
 from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-
 from . import shopping_repo
 from .ui import _whole_number
 
 router = APIRouter()
-templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
-
 
 def _context() -> dict:
     items = shopping_repo.list_items()
