@@ -2,6 +2,8 @@ from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import repo
@@ -32,7 +34,7 @@ async def security(request: Request, call_next):
 
 app.include_router(ui_router)  # adds the web pages from ui.py
 app.include_router(shopping_router)  # adds the shopping list pages
-
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 class RecipeIn(BaseModel):
     title: str
