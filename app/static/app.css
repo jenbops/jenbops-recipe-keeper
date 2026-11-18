@@ -72,3 +72,38 @@ label { display: block; margin: 1rem 0 .25rem; font-weight: 600; color: var(--mu
 }
 .btn.danger { border-color: #E5484D; color: #FF8A8F; }
 .actions { display: flex; gap: .75rem; margin-top: 2rem; }
+
+/* links */
+a { color: var(--accent); }
+
+/* number boxes (servings, prep, cook) */
+input[type=number] {
+  width: 7rem; min-height: 48px; box-sizing: border-box; padding: .75rem .9rem;
+  font-size: 1rem; font-family: inherit; border-radius: 12px;
+  border: 1px solid var(--search-border); background: var(--search-bg); color: var(--search-text);
+}
+
+/* recipe page */
+a.back { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); text-decoration: none; }
+.times { color: var(--muted); }
+.panel {
+  margin: 1.25rem 0; padding: 1.1rem 1.2rem; border-radius: 16px; background: var(--card);
+  box-shadow: var(--card-shadow); outline: var(--card-stitch); outline-offset: -7px;
+}
+.panel h3 { margin-top: 0; }
+
+/* shopping list rows */
+ul.shopping { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+ul.shopping li {
+  display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+  min-height: 52px; padding: .5rem .9rem; border-radius: 14px; background: var(--card);
+  box-shadow: var(--card-shadow); outline: var(--card-stitch); outline-offset: -5px;
+}
+ul.shopping label { display: flex; align-items: center; gap: .75rem; flex: 1; margin: 0; font-weight: 400; color: var(--text); }
+ul.shopping input[type=checkbox] { width: 24px; height: 24px; margin: 0; }
+ul.shopping .done { text-decoration: line-through; color: var(--muted); }
+
+/* the Servings / Prep / Cook row on the form */
+.row { display: flex; gap: .75rem; }
+.row label { flex: 1; }
+.row input[type=number] { width: 100%; }
