@@ -16,6 +16,7 @@
   --text: #F6EBDD;
   --muted: #C9D9D6;
   --accent: #E8A06A;
+  --danger: #FF8A8F;
 
   --btn-from: #F0AE7A;
   --btn-to: #D98C52;
@@ -28,4 +29,90 @@
   --search-text: #F6EBDD;
   --search-border: #2D6E74;
   --placeholder: #C9D9D6;
+}
+/* ---------- Sage & Pearl (light) ---------- */
+[data-theme="sage"] {
+  --bg: #F3ECDF;
+  --bg-image:
+    linear-gradient(115deg, rgba(255,255,255,0) 28%, rgba(255,255,255,.6) 41%, rgba(190,225,200,.32) 49%, rgba(255,222,196,.3) 57%, rgba(255,255,255,0) 70%),
+    radial-gradient(120% 60% at 10% 0%, rgba(255,255,255,.9) 0%, rgba(255,255,255,0) 55%),
+    radial-gradient(90% 55% at 100% 30%, #D6E4D3 0%, rgba(214,228,211,0) 60%),
+    radial-gradient(90% 60% at 0% 65%, #F0DDC8 0%, rgba(240,221,200,0) 60%),
+    radial-gradient(100% 50% at 90% 100%, #E4E8CF 0%, rgba(228,232,207,0) 65%),
+    linear-gradient(160deg, #F6F0E4, #F3ECDF 50%, #EAF0E3);
+  --card: #FBF7EF; --border: #D9CDB6;
+  --card-shadow: 0 3px 8px rgba(60,45,20,.18); --card-stitch: none;
+  --text: #2A2722; --muted: #5C574D; --accent: #4F6F4C; --danger: #B42318;
+  --btn-from: #5F8159; --btn-to: #4F6F4C; --btn-text: #FBF7EF;
+  --chip: #E9C9B5; --chip-text: #3B2A20;
+  --search-bg: #FBF7EF; --search-text: #2A2722; --search-border: #D9CDB6; --placeholder: #5C574D;
+}
+
+/* ---------- Navy & Gold (dark) ---------- */
+[data-theme="navy"] {
+  --bg: #050F2E;
+  --bg-image:
+    linear-gradient(115deg, rgba(200,215,255,0) 28%, rgba(200,215,255,.17) 41%, rgba(190,170,240,.15) 49%, rgba(255,210,180,.12) 57%, rgba(255,255,255,0) 70%),
+    radial-gradient(120% 55% at 10% 0%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%),
+    radial-gradient(90% 50% at 100% 30%, rgba(170,150,235,.16) 0%, rgba(170,150,235,0) 60%),
+    radial-gradient(90% 55% at 0% 65%, rgba(255,205,175,.08) 0%, rgba(255,205,175,0) 60%),
+    radial-gradient(80% 35% at 100% 100%, rgba(227,181,91,.12), rgba(227,181,91,0) 70%),
+    linear-gradient(160deg, #081A44 0%, #050F2E 45%, #020718 100%);
+  --card: #0B1E47; --border: #2C4E94;
+  --card-shadow: 0 3px 8px rgba(0,0,0,.35); --card-stitch: none;
+  --text: #FFFFFF; --muted: #C9D4EC; --accent: #E3B55B; --danger: #FF8A8F;
+  --btn-from: #EBC275; --btn-to: #D9A441; --btn-text: #0B1A3D;
+  --chip: #FFFFFF; --chip-text: #0B1A3D;
+  --search-bg: #FFFFFF; --search-text: #0B1A3D; --search-border: #E3B55B; --placeholder: #4A5877;
+}
+
+/* ---------- Orchard (dark green) ---------- */
+[data-theme="orchard"] {
+  --bg:#173F33;
+  --bg-image:
+    radial-gradient(70% 40% at 15% 8%, rgba(154,71,157,.45), rgba(154,71,157,0) 70%),
+    radial-gradient(60% 35% at 95% 22%, rgba(211,82,144,.32), rgba(211,82,144,0) 70%),
+    radial-gradient(70% 40% at 0% 60%, rgba(247,145,100,.26), rgba(247,145,100,0) 70%),
+    radial-gradient(60% 35% at 100% 80%, rgba(252,219,133,.16), rgba(252,219,133,0) 70%),
+    radial-gradient(80% 40% at 40% 100%, rgba(126,184,128,.30), rgba(126,184,128,0) 70%),
+    linear-gradient(#173F33, #173F33);
+  --card: #256351; --border: #3E8A72;
+  --card-shadow: 0 3px 8px rgba(0,0,0,.35); --card-stitch: none;
+  --text: #FFF4E0; --muted: #CFE6D0; --accent: #FCDB85; --danger: #FF9AA0;
+  --btn-from: #FAA57F; --btn-to: #F79164; --btn-text: #123127;
+  --chip: #D35290; --chip-text: #FFFFFF;
+  --search-bg: #9A479D; --search-text: #FFFFFF; --search-border: #D08CD3; --placeholder: #F3E3F4;
+}
+
+/* ---------- Raspberry (dark plum) ---------- */
+[data-theme="raspberry"] {
+  --bg: #2F2447;
+  --bg-image:
+    radial-gradient(80% 35% at 10% 5%, rgba(246,183,199,.22), rgba(246,183,199,0) 70%),
+    radial-gradient(80% 35% at 100% 100%, rgba(163,187,215,.2), rgba(163,187,215,0) 70%),
+    linear-gradient(160deg, #3A2B5C 0%, #2F2447 45%, #271D3F 100%);
+  --card: #523F77; --border: #6A5A91;
+  --card-shadow: 0 3px 8px rgba(0,0,0,.35); --card-stitch: none;
+  --text: #FBF3F8; --muted: #D9CFEA; --accent: #F6B7C7; --danger: #FFA3AD;
+  --btn-from: #F9C9D5; --btn-to: #F6B7C7; --btn-text: #2B1F45;
+  --chip: #B6A5CE; --chip-text: #2B1F45;
+  --search-bg: #A3BBD7; --search-text: #2B1F45; --search-border: #C6D6EA; --placeholder: #3E3560;
+}
+
+/* ---------- Pearl (light) ---------- */
+[data-theme="pearl"] {
+  --bg: #E6DEDD;
+  --bg-image:
+    linear-gradient(115deg, rgba(255,255,255,0) 28%, rgba(255,255,255,.6) 41%, rgba(205,190,232,.3) 49%, rgba(255,214,194,.3) 57%, rgba(255,255,255,0) 70%),
+    radial-gradient(120% 60% at 10% 0%, rgba(255,255,255,.9) 0%, rgba(255,255,255,0) 55%),
+    radial-gradient(90% 55% at 100% 30%, #D9CEDF 0%, rgba(217,206,223,0) 60%),
+    radial-gradient(90% 60% at 0% 65%, #EBD3C3 0%, rgba(235,211,195,0) 60%),
+    radial-gradient(100% 50% at 90% 100%, #E3CCD0 0%, rgba(227,204,208,0) 65%),
+    linear-gradient(160deg, #F1E9E6, #E6DEDD 50%, #EADFE6);
+  --card: #F5F0EE; --border: #C8B5A9;
+  --card-shadow: 0 3px 8px rgba(80,60,60,.18); --card-stitch: none;
+  --text: #3A2E2E; --muted: #5A4747; --accent: #7A4F3E; --danger: #B42318;
+  --btn-from: #C4A088; --btn-to: #B7937A; --btn-text: #2E2222;
+  --chip: #AF9292; --chip-text: #2E2222;
+  --search-bg: #BCAEC4; --search-text: #2E2222; --search-border: #9C8CA6; --placeholder: #3F3649;
 }
