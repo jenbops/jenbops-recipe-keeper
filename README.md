@@ -13,6 +13,11 @@ A private, mobile-friendly web app for saving recipes, tagging them, and finding
 - Multiple tags per recipe, with tag-filter chips (a recipe must match all selected tags)
 - Keyword search across title, ingredients, and steps (PostgreSQL full-text search)
 - Search updates as you type, without a full page reload
+- Servings, prep time, and cook time on each recipe
+- Structured ingredients (quantity, unit, name, note), including section labels such as `crust:` and `filling:` that group the list on the recipe page
+- Scale a recipe up or down by servings
+- Shopping list built from recipes: combines matching ingredients, with an "I already have this" checkoff
+- Six selectable color themes (Copper and Teal, Sage and Pearl, Navy and Gold, Orchard, Raspberry, Pearl), saved in a cookie
 - Mobile-first layout with large tap targets
 - A JavaScript Object Notation (JSON) interface with interactive docs at `/docs`
 
@@ -41,7 +46,10 @@ Google Cloud e2-micro Virtual Machine (VM), Debian 12
 |---|---|
 | App | Python 3.13, FastAPI, Jinja2 templates, htmx |
 | Database | PostgreSQL 17 (full-text search, many-to-many tags) |
+| Look and feel | One shared stylesheet with theme variables (`app/static/`); Lora headings, Source Sans 3 body text, and Nunito Sans interface text from Google Fonts |
+| Tests | pytest in Docker against a throwaway PostgreSQL database |
 | Containers | Docker, Docker Compose (OrbStack locally) |
+| Continuous integration and delivery | Google Cloud Build runs the tests; a tag push publishes an approved release that the VM deploys by itself |
 | Hosting | Google Cloud Platform (GCP) e2-micro VM, Always Free eligible |
 | Infrastructure as Code | Terraform (network, firewall, VM, service account, backup bucket) |
 | Access and ingress | Cloudflare Tunnel and Cloudflare Access (one-time email code) |
@@ -53,21 +61,38 @@ Google Cloud e2-micro Virtual Machine (VM), Debian 12
 .
 ├── compose.yaml            # db, web, and cloudflared (prod profile) services
 ├── Dockerfile              # app image, runs as a non-root user
-├── cloudbuild.yaml         # Cloud Build pipeline: build, smoke test, publish image
+├── cloudbuild.yaml         # Cloud Build: run the tests on every push
+├── cloudbuild-release.yaml # Cloud Build: run the tests, then approve a tagged release
+├── pytest.ini              # test settings
 ├── requirements.txt        # pinned dependency versions
+├── requirements-dev.txt    # test-only dependencies
 ├── .env.example            # template for the local, git-ignored .env
 ├── app/
 │   ├── main.py             # JSON endpoints, security middleware
-│   ├── ui.py               # HTML pages (list, view, add, edit, delete)
-│   ├── repo.py             # all database queries
+│   ├── ui.py               # HTML pages (list, view, add, edit, delete, theme picker)
+│   ├── shopping_ui.py      # shopping list pages
+│   ├── repo.py             # recipe database queries
+│   ├── shopping_repo.py    # shopping list database queries
+│   ├── ingredients.py      # ingredient line parser and section labels
+│   ├── scaling.py          # scale ingredients by servings
+│   ├── backfill.py         # fill ingredient rows for older recipes
+│   ├── themes.py           # the list of themes and the theme cookie
 │   ├── db.py               # database connection
+│   ├── static/             # app.css (shared styles), themes.css (theme colors)
 │   └── templates/          # Jinja2 page templates
-├── db/schema.sql           # tables, join table, full-text search index
+├── db/
+│   ├── schema.sql          # full schema, used for new databases and tests
+│   └── migrations/         # numbered, safe-to-rerun changes (001 to 004)
+├── tests/                  # pytest tests
+├── deploy/                 # systemd service and timer for the VM's release watcher
 ├── scripts/
 │   ├── backup.sh               # cloud VM: nightly backup to Cloud Storage
 │   ├── backup-local.sh         # Mac: nightly backup to ~/Backups/recipe-keeper
 │   ├── restore-local.sh        # Mac: safe restore test, or live restore
-│   └── push-local-to-cloud.sh  # Mac: replace the cloud database with the local one
+│   ├── push-local-to-cloud.sh  # Mac: replace the cloud database with the local one
+│   ├── migrate.sh              # apply any migrations that have not run yet
+│   ├── deploy-watch.sh         # VM: check for a newly approved release
+│   └── deploy.sh               # VM: back up, check out the tag, migrate, rebuild, health check
 └── infra/                  # Terraform
     ├── main.tf  variables.tf  outputs.tf
     └── startup.sh          # creates a 2 GB swap file on first boot
@@ -89,23 +114,48 @@ Stop with `docker compose down` (keeps data) or `docker compose down -v` (also d
 
 The `db` and `web` services use `restart: unless-stopped`, so after a reboot the Docker engine (OrbStack, which starts at login) brings them back automatically. Containers you stopped yourself with `down` or `stop` stay stopped. The `cloudflared` service belongs to the `prod` profile and never starts locally.
 
-## Releases
+## Tests
 
-Known-good versions are marked with Git tags (for example `v1.0`). To return to one: `git checkout v1.0`. Push a new tag with `git tag -a v1.1 -m "message" && git push origin v1.1`.
+```bash
+docker compose run --rm --build test
+```
+
+`--build` rebuilds the image first so the tests always run your current code. Tests run inside Docker against a throwaway PostgreSQL database created from `db/schema.sql`, never against your real data.
+
+## Database changes (migrations)
+
+Schema changes are numbered files in `db/migrations/`, each written so it is safe to run twice, and mirrored in `db/schema.sql`. `./scripts/migrate.sh` applies the ones that have not run yet and records them in a `schema_migrations` table. The VM runs it automatically on every deploy.
+
+## Releases and deployment
+
+Known-good versions are marked with Git tags (`v1.0` and up). The release flow is:
+
+1. Merge to `main` through a pull request. Cloud Build runs the tests on every push and must pass.
+2. Confirm `main` has what you expect, then tag it: `git tag -a v1.7 -m "message" && git push origin v1.7`.
+3. The tag starts a Cloud Build trigger that runs the tests again and, if they pass, writes the tag name to a private releases bucket.
+4. A systemd timer on the VM checks that bucket every 5 minutes. When it sees a new tag, `scripts/deploy.sh` backs up the database, checks out the tag, runs migrations, rebuilds, health-checks, and rolls back if the check fails.
+
+The VM only has read access to the releases bucket and no inbound access, so nothing from outside can push code to it. Never move or delete a released tag: the VM decides whether a release is already deployed by its tag name. A release ships code and migrations, not recipes; use `scripts/push-local-to-cloud.sh` to copy data.
+
+To return to a known-good version locally: `git checkout v1.0`.
 
 ## Continuous integration (Cloud Build)
 
-`cloudbuild.yaml` builds the image, runs a smoke test (the app code imports cleanly), and publishes the image to Artifact Registry. A trigger on a lab branch starts it on every push. The trigger and the registry are created on demand for experiments and deleted afterward to avoid storage charges. Setup needs: the Cloud Build and Artifact Registry services enabled, an Artifact Registry repository, a build service account with logging, registry-write, and storage-read roles, and the Cloud Build GitHub app granted access to this repository.
+`cloudbuild.yaml` starts a throwaway PostgreSQL container, builds the test image (the `test` stage of the Dockerfile), and runs the tests against it. A trigger runs it on every branch push. `cloudbuild-release.yaml` does the same for tag pushes, then publishes the approved tag. Setup needs: the Cloud Build service enabled, a build service account with only the roles it needs (Logs Writer for tests; write access to the single releases bucket for the release trigger), and the Cloud Build GitHub app granted access to this repository. The release trigger must name `cloudbuild-release.yaml` explicitly; "Autodetected" would pick `cloudbuild.yaml` instead.
 
 ## Data model
 
 ```
 recipes ──< recipe_tags >── tags
+recipes ──< ingredients
+shopping_items  (standalone; remembers which recipes it came from)
 ```
 
-- `recipes`: title, ingredients, steps, source_url, notes, timestamps, and a generated `search_vector` column indexed with a Generalized Inverted Index (GIN)
+- `recipes`: title, ingredients (the original text, kept untouched), steps, source_url, notes, servings, prep and cook minutes, timestamps, and a generated `search_vector` column indexed with a Generalized Inverted Index (GIN)
 - `tags`: unique, lowercased names
 - `recipe_tags`: join table; deleting a recipe removes its links
+- `ingredients`: one row per ingredient line, with position, quantity, unit, name, note, the original text, and an optional section label (`Crust`, `Filling`); rebuilt from the recipe text on every save
+- `shopping_items`: one shared list, unique on lowercased name plus unit, with an "I already have this" flag and the recipes it came from
 
 ## Endpoints
 
@@ -116,6 +166,10 @@ recipes ──< recipe_tags >── tags
 | GET | `/r/{id}` | View a recipe |
 | GET/POST | `/r/{id}/edit` | Edit a recipe |
 | POST | `/r/{id}/delete` | Delete a recipe |
+| GET | `/r/{id}/ingredients` | Ingredient list scaled to a chosen number of servings |
+| GET | `/shopping` | Shopping list |
+| POST | `/shopping/add/{id}`, `/shopping/clear`, `/shopping/{item_id}/toggle`, `/shopping/{item_id}/delete` | Add a recipe's ingredients, clear the list, check off, remove an item |
+| POST | `/theme` | Save the chosen theme in a cookie |
 | GET/POST | `/recipes` | JSON list (`?q=` and repeated `?tag=`) / create |
 | GET/PUT/DELETE | `/recipes/{id}` | JSON read / update / delete |
 | GET | `/tags` | Tags with recipe counts |
@@ -216,7 +270,15 @@ The backup bucket has `force_destroy = false`, so Terraform refuses to delete it
 
 ## Roadmap
 
-- Self-host the htmx script and add a strict Content Security Policy
-- Photos, import from URL, structured ingredients, and meal planning
-- Automated tests and a GitHub Actions pipeline
+Done: structured ingredients and sections, scaling, shopping list, themes and fonts, automated tests, and tag-triggered releases.
+
+Next:
+
+- Self-host the htmx script and the fonts, pin their versions, and add a strict Content Security Policy
+- Import from a web page address, a PDF, or a photo, with a review screen before saving
+- The same pipeline in GitHub Actions
+- Python and Terraform version upgrades
+- Configure the VM with Ansible
+- Observability (OpenTelemetry and monitoring)
+- Multi-user: each person owns their recipes
 - Remote Terraform state
