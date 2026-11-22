@@ -124,6 +124,7 @@ ul.stats li {
 /* texture layers: fixed behind the page, hidden unless the theme asks for them */
 .tx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; display: none; }
 .tx-grain { display: block; mix-blend-mode: overlay; opacity: .32; }
+h4.section { margin: 1rem 0 .25rem; opacity: .8; }
 [data-theme="sage"] .tx-grain  { mix-blend-mode: multiply; opacity: .22; }
 [data-theme="pearl"] .tx-grain { mix-blend-mode: multiply; opacity: .20; }
 

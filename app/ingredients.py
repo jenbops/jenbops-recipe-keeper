@@ -69,12 +69,29 @@ def parse_line(line: str) -> dict:
         "original_text": line,
     }
 
+# a section label is text then a colon and nothing else: "crust:" or "For the filling:"
+SECTION = re.compile(r"^\s*([^\d:\s][^:]{0,58}?)\s*:\s*$")
+
+
+def section_label(line: str) -> str | None:
+    match = SECTION.match(line)
+    if not match:
+        return None
+    label = match.group(1).strip()
+    return label[0].upper() + label[1:]
 
 def parse_ingredients(text: str) -> list[dict]:
     rows = []
+    section = None
     for line in text.splitlines():
-        if line.strip():  # skip blank lines
-            row = parse_line(line)
-            row["position"] = len(rows) + 1
-            rows.append(row)
+        if not line.strip():
+            continue  # skip blank lines
+        label = section_label(line)
+        if label:
+            section = label  # starts a new group; it is not an ingredient itself
+            continue
+        row = parse_line(line)
+        row["section"] = section
+        row["position"] = len(rows) + 1
+        rows.append(row)
     return rows
