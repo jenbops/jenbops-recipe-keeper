@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS ingredients (
     unit          TEXT,
     name          TEXT NOT NULL,
     note          TEXT,
+    section       TEXT,
     original_text TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ingredients_recipe_idx ON ingredients (recipe_id, position);
@@ -59,3 +60,5 @@ CREATE TABLE IF NOT EXISTS shopping_items (
 -- Same name (ignoring capitals) + same unit = the same item. This also powers the combining.
 CREATE UNIQUE INDEX IF NOT EXISTS shopping_items_key
     ON shopping_items (lower(name), coalesce(unit, ''));
+
+    

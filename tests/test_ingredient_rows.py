@@ -67,3 +67,28 @@ def test_migration_is_safe_to_run_twice(test_database):
     with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
         conn.execute(sql)
         conn.execute(sql)
+
+def test_sections_survive_save_and_reload(client):
+    text = (
+        "4 cups apple cider\n"
+        "\n"
+        "crust:\n"
+        "1-1/2 cups all-purpose flour\n"
+        "1 tsp salt\n"
+        "\n"
+        "filling:\n"
+        "6 apples\n"
+        "\n"
+        "cinnamon-sugar topping:\n"
+        "2 tbsp sugar"
+    )
+    rid = make_recipe(client, ingredients=text)
+    rows = rows_for(client, rid)
+
+    assert [r["name"] for r in rows] == [
+        "apple cider", "all-purpose flour", "salt", "apples", "sugar",
+    ]
+    assert [r["section"] for r in rows] == [
+        None, "Crust", "Crust", "Filling", "Cinnamon-sugar topping",
+    ]
+    assert [r["position"] for r in rows] == [1, 2, 3, 4, 5]        

@@ -100,7 +100,7 @@ def scale_rows(rows, servings_from: int, servings_to: int) -> list[dict]:
     for row in rows:
         # no amount, or no change requested: show exactly what was typed
         if row["quantity"] is None or factor == 1:
-            lines.append({"text": row["original_text"], "scaled": False})
+            lines.append({"text": row["original_text"], "scaled": False, "section": row.get("section")})
             continue
         q = float(row["quantity"]) * factor
         unit = row["unit"]
@@ -114,7 +114,7 @@ def scale_rows(rows, servings_from: int, servings_to: int) -> list[dict]:
         text = " ".join(parts)
         if row["note"]:
             text += ", " + row["note"]
-        lines.append({"text": text, "scaled": True})
+        lines.append({"text": text, "scaled": True, "section": row.get("section")})
     return lines
 
 

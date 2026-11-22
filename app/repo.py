@@ -26,10 +26,10 @@ def set_ingredients(conn, recipe_id: int, text: str):
     conn.execute("DELETE FROM ingredients WHERE recipe_id = %s", (recipe_id,))
     for row in parse_ingredients(text or ""):
         conn.execute(
-            "INSERT INTO ingredients (recipe_id, position, quantity, unit, name, note, original_text) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            "INSERT INTO ingredients (recipe_id, position, quantity, unit, name, note, original_text, section) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
             (recipe_id, row["position"], row["quantity"], row["unit"],
-             row["name"], row["note"], row["original_text"]),
+             row["name"], row["note"], row["original_text"], row["section"]),
         )
 
 def create_recipe(d: dict) -> int:
@@ -119,7 +119,7 @@ def get_recipe(rid: int):
         if recipe is None:
             return None
         recipe["ingredient_rows"] = conn.execute(
-            "SELECT position, quantity, unit, name, note, original_text "
+            "SELECT position, quantity, unit, name, note, original_text, section "
             "FROM ingredients WHERE recipe_id = %s ORDER BY position",
             (rid,),
         ).fetchall()
