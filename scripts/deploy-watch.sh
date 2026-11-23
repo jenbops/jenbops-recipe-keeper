@@ -12,7 +12,7 @@ PROJECT=$(curl -fsS -H "Metadata-Flavor: Google" \
   http://metadata.google.internal/computeMetadata/v1/project/project-id)
 BUCKET="gs://${PROJECT}-releases"
 
-APPROVED=$(gcloud storage cat "$BUCKET/approved-release" 2>/dev/null | tr -d '[:space:]') || exit 0
+APPROVED=$(gcloud storage cat "$BUCKET/approved-release" 2>/dev/null | tr -d '[:space:]') || { echo "Could not read the approved release from $BUCKET"; exit 0; }
 [[ "$APPROVED" =~ ^v[0-9]+(\.[0-9]+)*$ ]] || { echo "Ignoring odd approved-release value"; exit 0; }
 
 DEPLOYED_FILE="$HOME/.recipe-deployed-release"
@@ -20,9 +20,15 @@ FAILED_FILE="$HOME/.recipe-failed-release"
 DEPLOYED=$(cat "$DEPLOYED_FILE" 2>/dev/null || true)
 FAILED=$(cat "$FAILED_FILE" 2>/dev/null || true)
 
-[ "$APPROVED" = "$DEPLOYED" ] && exit 0
+if [ "$APPROVED" = "$DEPLOYED" ]; then
+  echo "Nothing to do: $DEPLOYED is already deployed"
+  exit 0
+fi
 # a release that already failed is not retried every 5 minutes; a person looks at it
-[ "$APPROVED" = "$FAILED" ] && exit 0
+if [ "$APPROVED" = "$FAILED" ]; then
+  echo "Skipping $APPROVED: it failed earlier, see ~/.recipe-failed-release"
+  exit 0
+fi
 
 echo "New approved release: $APPROVED (running: ${DEPLOYED:-none})"
 if ./scripts/deploy.sh "$APPROVED"; then
