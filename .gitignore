@@ -7,3 +7,4 @@ infra/.terraform/
 *.tfstate
 *.tfstate.*
 .DS_Store
+ansible/inventory.yaml

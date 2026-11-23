@@ -1,0 +1,56 @@
+- name: Configure the Recipe Keeper VM
+  hosts: all
+  become: true
+  tasks:
+    - name: tmux is installed
+      ansible.builtin.apt:
+        name: tmux
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Docker is enabled and running
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Deploy user can run Docker without sudo
+      ansible.builtin.user:
+        name: "{{ vm_user }}"
+        groups: docker
+        append: true
+
+    - name: Deploy units are installed from this repo
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../deploy/{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop:
+        - recipe-deploy.service
+        - recipe-deploy.timer
+      notify: Reload systemd and restart the deploy timer
+
+    - name: Deploy timer is enabled and running
+      ansible.builtin.systemd:
+        name: recipe-deploy.timer
+        enabled: true
+        state: started
+
+    - name: Nightly database backup
+      ansible.builtin.cron:
+        name: recipe-keeper nightly backup
+        user: "{{ vm_user }}"
+        minute: "15"
+        hour: "3"
+        job: "/home/{{ vm_user }}/jenbops-recipe-keeper/scripts/backup.sh >> /home/{{ vm_user }}/backup.log 2>&1"   
+
+  handlers:
+    - name: Reload systemd and restart the deploy timer
+      ansible.builtin.systemd:
+        name: recipe-deploy.timer
+        daemon_reload: true
+        state: restarted
+        
