@@ -44,14 +44,15 @@ Google Cloud e2-micro Virtual Machine (VM), Debian 12
 
 | Layer | Choice |
 |---|---|
-| App | Python 3.13, FastAPI, Jinja2 templates, htmx |
+| App | Python 3.14, FastAPI, Jinja2 templates, htmx |
 | Database | PostgreSQL 17 (full-text search, many-to-many tags) |
 | Look and feel | One shared stylesheet with theme variables (`app/static/`); Lora headings, Source Sans 3 body text, and Nunito Sans interface text from Google Fonts |
 | Tests | pytest in Docker against a throwaway PostgreSQL database |
 | Containers | Docker, Docker Compose (OrbStack locally) |
 | Continuous integration and delivery | Google Cloud Build runs the tests; a tag push publishes an approved release that the VM deploys by itself |
 | Hosting | Google Cloud Platform (GCP) e2-micro VM, Always Free eligible |
-| Infrastructure as Code | Terraform (network, firewall, VM, service account, backup bucket) |
+| Infrastructure as Code | Terraform with the Google provider 8.x (network, firewall, VM, service account, backup bucket) |
+| VM configuration | Ansible, run from the Mac through the Identity-Aware Proxy tunnel (tmux, Docker service, deploy timer, nightly backup job) |
 | Access and ingress | Cloudflare Tunnel and Cloudflare Access (one-time email code) |
 | Admin access | Secure Shell (SSH) through Identity-Aware Proxy (IAP), no public SSH |
 
@@ -85,6 +86,9 @@ Google Cloud e2-micro Virtual Machine (VM), Debian 12
 │   └── migrations/         # numbered, safe-to-rerun changes (001 to 004)
 ├── tests/                  # pytest tests
 ├── deploy/                 # systemd service and timer for the VM's release watcher
+├── ansible/
+│   ├── site.yaml               # the playbook: what the VM should look like
+│   └── inventory.example.yaml  # template; copy to inventory.yaml (git-ignored) and fill in
 ├── scripts/
 │   ├── backup.sh               # cloud VM: nightly backup to Cloud Storage
 │   ├── backup-local.sh         # Mac: nightly backup to ~/Backups/recipe-keeper
@@ -184,6 +188,50 @@ Prerequisites: a GCP project with billing enabled and a budget alert, `gcloud` s
 3. **On the VM:** install Docker, add a read-only GitHub deploy key, clone the repo, create `.env` (strong random database password, `TUNNEL_TOKEN`, `COMPOSE_PROFILES=prod`).
 4. **Start:** `docker compose up -d --build`, then apply `db/schema.sql`.
 5. **Cloudflare:** create an Access application with an Allow policy for your email, create a tunnel, and add a published route to `http://web:8000`.
+6. **Configure the VM:** run the Ansible playbook (next section) to install the release watcher timer and the nightly backup job.
+
+## Configuring the VM (Ansible)
+
+`ansible/site.yaml` describes what the VM should look like, and running it brings the VM to that state. It is safe to run repeatedly: when the VM already matches, nothing changes.
+
+It manages:
+
+- `tmux` installed
+- the Docker service enabled and running, and the deploy user in the `docker` group
+- the release watcher units (`deploy/recipe-deploy.service` and `.timer`) copied from this repo into `/etc/systemd/system`, and the timer enabled
+- the nightly database backup in the deploy user's crontab (03:15)
+
+It does **not** manage secrets (`.env`, the GitHub deploy key, the Cloudflare tunnel token), the Docker installation itself, or anything inside the containers or database.
+
+Prerequisites: Ansible on the Mac (`brew install ansible`), `gcloud` signed in, and the SSH key that `gcloud compute ssh` creates (`~/.ssh/google_compute_engine`).
+
+One-time setup:
+
+```bash
+cp ansible/inventory.example.yaml ansible/inventory.yaml
+```
+
+Edit `ansible/inventory.yaml` and replace `YOUR_VM_USER` (twice) and `YOUR_PROJECT_ID`. This file is git-ignored on purpose, so your real values never reach GitHub. If `vm_user` holds the wrong text, a run can try to create a user with that name, so check it with:
+
+```bash
+ansible -i ansible/inventory.yaml all -m debug -a "var=vm_user"
+```
+
+Every run starts with check mode, which shows what would change without changing anything:
+
+```bash
+ansible -i ansible/inventory.yaml all -m ping                                   # test the connection (expect "pong")
+ansible-playbook -i ansible/inventory.yaml ansible/site.yaml --check --diff     # preview
+ansible-playbook -i ansible/inventory.yaml ansible/site.yaml                    # apply
+```
+
+A matching VM shows `changed=0` in the recap. Anything else is a difference between the VM and this repo; read the diff before applying.
+
+Notes:
+
+- Ansible runs from the Mac through the Identity-Aware Proxy tunnel, so the VM needs no public SSH and no extra software; Debian's Python is enough.
+- Ansible identifies its cron entry by the `#Ansible:` comment above it. Do not hand-edit that line in `crontab -e`, and do not keep a second hand-written copy of the same job, or you will get two backups.
+- No release tag is needed for Ansible changes: the VM's deploys use only the application code.
 
 ## Backups and restore
 
@@ -270,15 +318,13 @@ The backup bucket has `force_destroy = false`, so Terraform refuses to delete it
 
 ## Roadmap
 
-Done: structured ingredients and sections, scaling, shopping list, themes and fonts, automated tests, and tag-triggered releases.
+Done: structured ingredients and sections, scaling, shopping list, themes and fonts, automated tests, tag-triggered releases, Python 3.14 and Terraform provider upgrades, and VM configuration with Ansible.
 
 Next:
 
 - Self-host the htmx script and the fonts, pin their versions, and add a strict Content Security Policy
 - Import from a web page address, a PDF, or a photo, with a review screen before saving
 - The same pipeline in GitHub Actions
-- Python and Terraform version upgrades
-- Configure the VM with Ansible
 - Observability (OpenTelemetry and monitoring)
 - Multi-user: each person owns their recipes
 - Remote Terraform state
